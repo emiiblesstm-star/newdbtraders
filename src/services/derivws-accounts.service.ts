@@ -262,17 +262,19 @@ export class DerivWSAccountsService {
                 if (!accounts || accounts.length === 0) {
                     throw new Error('No accounts available');
                 }
-
-                // Step 3: Store accounts in sessionStorage (already done in fetchAccountsList)
-                // this.storeAccounts(accounts); // Already stored in fetchAccountsList
             }
 
-            // Step 4: Get default account (first from list)
-            const defaultAccount = accounts[0];
+            // Step 3: Resolve which account to connect as.
+            // On an account switch the caller has already written the new loginid to
+            // localStorage before triggering a WebSocket regeneration, so we honour
+            // that selection here instead of always falling back to accounts[0].
+            const activeLoginId = localStorage.getItem('active_loginid');
+            const targetAccount =
+                (activeLoginId && accounts.find(a => a.account_id === activeLoginId)) || accounts[0];
 
-            // Step 5: Fetch OTP and WebSocket URL (always fetch fresh OTP)
-            console.log(`[DerivWS] Fetching OTP for account: ${defaultAccount.account_id}`);
-            const websocketURL = await this.fetchOTPWebSocketURL(accessToken, defaultAccount.account_id);
+            // Step 4: Fetch OTP and WebSocket URL for the resolved account (always fresh OTP)
+            console.log(`[DerivWS] Fetching OTP for account: ${targetAccount.account_id}`);
+            const websocketURL = await this.fetchOTPWebSocketURL(accessToken, targetAccount.account_id);
             return websocketURL;
         } catch (error) {
             console.error('[DerivWS] Error in authenticated WebSocket URL flow:', error);
