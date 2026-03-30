@@ -1,4 +1,5 @@
 import { clearCodeVerifier, getCodeVerifier, isProduction } from '@/components/shared';
+import { getCurrentClientID } from '@/config/domain-app-ids';
 import { ErrorLogger } from '@/utils/error-logger';
 import brandConfig from '../../brand.config.json';
 
@@ -131,15 +132,16 @@ export class OAuthTokenExchangeService {
             // - grant_type: 'authorization_code'
             // - code: the authorization code
             // - redirect_uri: must match the one used in authorization request
-            // - client_id: your OAuth2 client ID
+            // - client_id: your OAuth2 client ID (must match the one used in authorization URL)
             // - code_verifier: the PKCE code verifier (proves we initiated the auth flow)
 
-            const clientId = process.env.CLIENT_ID;
+            // Use domain-based client ID (must match the one used in OAuth URL generation)
+            const clientId = getCurrentClientID();
             if (!clientId) {
-                ErrorLogger.error('OAuth', 'CLIENT_ID environment variable is not set');
+                ErrorLogger.error('OAuth', 'Unable to get CLIENT_ID for current domain');
                 return {
                     error: 'invalid_client',
-                    error_description: 'CLIENT_ID is not configured. Please set the CLIENT_ID environment variable.',
+                    error_description: 'CLIENT_ID could not be determined for the current domain. Ensure domain is in DOMAIN_APP_IDS configuration.',
                 };
             }
 
