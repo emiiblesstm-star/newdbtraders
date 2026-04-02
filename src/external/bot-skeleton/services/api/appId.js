@@ -139,3 +139,54 @@ export const getToken = () => {
         account_id: active_loginid ?? undefined,
     };
 };
+
+/**
+ * Returns the authentication token string for the currently active account.
+ * Tries to get the token from the active account object first (new structure),
+ * falls back to localStorage.getItem('authToken') for backward compatibility.
+ * @returns {string|null} Token string or null if not found.
+ */
+export const V2GetActiveToken = () => {
+    const active_loginid = getLoginId();
+    if (active_loginid) {
+        const accounts = JSON.parse(localStorage.getItem('accountsList') || '{}');
+        const active_account = accounts[active_loginid];
+        if (active_account && typeof active_account === 'object') {
+            // If the account object has a 'token' property, return it
+            if (active_account.token) {
+                return active_account.token;
+            }
+            // If the account object is itself the token string (old style)
+            if (typeof active_account === 'string') {
+                return active_account;
+            }
+        }
+    }
+    // Fallback to old 'authToken' key
+    const authToken = localStorage.getItem('authToken');
+    if (authToken && authToken !== 'null') return authToken;
+    return null;
+};
+
+/**
+ * Returns the client ID (loginid) associated with the active token.
+ * Uses the token from V2GetActiveToken and finds the corresponding loginid in accountsList.
+ * @returns {string|null} Loginid or null if not found.
+ */
+export const V2GetActiveClientId = () => {
+    const token = V2GetActiveToken();
+    if (!token) return null;
+
+    const accounts = JSON.parse(localStorage.getItem('accountsList') || '{}');
+    for (const [loginid, account] of Object.entries(accounts)) {
+        if (account && typeof account === 'object') {
+            if (account.token === token) {
+                return loginid;
+            }
+        } else if (account === token) {
+            // If the account value is the token string itself
+            return loginid;
+        }
+    }
+    return null;
+};
