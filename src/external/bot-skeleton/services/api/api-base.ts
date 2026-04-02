@@ -18,7 +18,7 @@ import {
     setIsAuthorizing,
 } from './observables/connection-status-stream';
 import ApiHelpers from './api-helpers';
-import { generateDerivApiInstance, V2GetActiveAccountId } from './appId';
+import { generateDerivApiInstance, V2GetActiveAccountId, V2GetActiveToken } from './appId';
 import chart_api from './chart-api';
 
 type CurrentSubscription = {
@@ -186,6 +186,9 @@ class APIBase {
                 }
             }
         }
+
+        // Retrieve the stored token if any
+        this.token = V2GetActiveToken() || '';
 
         const hasAccountID = V2GetActiveAccountId();
 
